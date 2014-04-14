@@ -9,6 +9,7 @@ open import Data.Product
 open import Data.Sum
 open import Data.Unit
 open import Data.Empty
+open import Data.List
 
 module Try1 where
 
@@ -68,5 +69,75 @@ module Try2 where
 
   data Mu (A : U) : Set where
     cons : ⟦ A ⟧ (Mu A) -> Mu A
+ 
+  natU : U
+  natU = 1' +' Var
 
+  nat : Set
+  nat = Mu natU
+
+  zU : nat
+  zU = cons (inj₁ tt)
+
+  sU : nat -> nat
+  sU n = cons (inj₂ n)
+
+  natZU : U
+  natZU = δ natU
+
+  natZ : Set
+  natZ = Mu natZU
+
+  blah : natZ
+  blah = cons (inj₂ tt)
+
+  zipper : U -> Set
+  zipper D = (List (Mu (δ D))) × (Mu D)
+
+-- durrr, do I need to do this from the "inside" of the recursion? Like what's the deal here?
+  rebuild : (D : U) -> zipper D -> Mu D
+  rebuild (d ×' d₁) z = {!!}
+  rebuild (d +' d₁) (proj₁ , proj₂) = {!!}
+  rebuild 1' ([] , cons tt) = cons tt
+  rebuild 1' (cons () ∷ xs , cons tt) 
+  rebuild 0' (proj₁ , cons ())
+  rebuild Var (proj₁ , proj₂) = {!!}
+
+  rebuild' : (A : U) -> Mu (δ A) -> Mu A -> Mu A
+  rebuild' (A ×' A₁) z (cons (proj₁ , proj₂)) = {!!}
+  rebuild' (A +' A₁) (cons (inj₁ x)) (cons (inj₁ x₁)) = {!!}
+  rebuild' (A +' A₁) (cons (inj₁ x)) (cons (inj₂ y)) = {!!}
+  rebuild' (A +' A₁) (cons (inj₂ y)) a = {!!}
+  rebuild' 1' (cons ()) a -- graghle these simple cases are working the way I want but...
+  rebuild' 0' (cons ()) a -- essentially there's some ugliness with the recursion that I'm not liking
+  rebuild' Var d a = cons a --- maybe I need to take the δ on the fixed point? So I notice in a really old
+                            -- conor paper that he has the μ as an explicit code in the universe and uses partial derivatives, maybe go back to that 
+
+module Try3 where
   
+  data U (n : ℕ) : Set where
+    _×'_ : U n -> U n -> U n
+    _+'_ : U n -> U n -> U n
+    1' : U n
+    0' : U n
+    Var : Fin n -> U n
+    μ : U (suc n) -> U n
+
+  emptyEnv : Fin 0 -> Set
+  emptyEnv () -- god I love proper pattern matching. I suppose I could just use Vec Set n tho
+
+  ⟦_⟧_ : {n : ℕ} -> U n -> (Fin n -> Set) -> Set
+  ⟦ u ×' u₁ ⟧ γ = ⟦ u ⟧ γ × ⟦ u₁ ⟧ γ
+  ⟦ u +' u₁ ⟧ γ = {!!}
+  ⟦ 1' ⟧ γ = ⊤
+  ⟦ 0' ⟧ γ = ⊥
+  ⟦ Var x ⟧ γ = γ x
+  ⟦ μ u ⟧ γ = {!!} -- oohhhhh this is why I should use vec or something not Fin n wompwomp, well fix that later okay
+
+  ∂ : {n : ℕ} -> Fin n -> U n -> U n
+  ∂ y (u ×' u₁) = {!!}
+  ∂ y (u +' u₁) = ∂ y u +' ∂ y u₁
+  ∂ y 1' = 0'
+  ∂ y 0' = 0'
+  ∂ y (Var x) = {!!}
+  ∂ y (μ u) = {!!}
